@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Gestão — Responsável pela Informática</title>
+<style>
+  :root{
+    --quadro: #1f3d2e; --quadro-2: #274a37;
+    --giz: #f3efe0; --giz-dim: #cfd6c8;
+    --papel: #f6f1e3; --papel-2: #efe7d0; --linha: #d8cda8;
+    --amarelo: #e8b94d; --vermelho: #c0533e; --verde-ok: #4c7a52;
+    --tinta: #2a2620; --sombra: rgba(20,30,20,.25); --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--quadro);
+    background-image: radial-gradient(circle at 10% 0%, rgba(255,255,255,.04), transparent 40%),
+                       radial-gradient(circle at 90% 80%, rgba(255,255,255,.03), transparent 45%);
+    font-family: 'Trebuchet MS','Segoe UI',Verdana,sans-serif;
+    color: var(--tinta); min-height:100vh; padding: 28px 16px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  header.board{ text-align:center; padding: 22px 18px 24px; margin-bottom: 22px; }
+  .chalk-title{
+    font-family:'Brush Script MT',cursive; font-size: clamp(2.2rem,6vw,3.4rem);
+    color: var(--giz); text-shadow: 0 0 6px rgba(255,255,255,.18); margin:0; transform: rotate(-1deg);
+  }
+  .chalk-sub{ color: var(--giz-dim); font-size:.9rem; letter-spacing:3px; text-transform:uppercase; margin-top:6px;}
+  .chalk-rule{ width:200px; height:2px; margin:14px auto 0;
+    background: repeating-linear-gradient(90deg, var(--giz-dim) 0 8px, transparent 8px 14px); opacity:.5;}
+  .badge-area{
+    display:inline-block; margin-top:14px; background: rgba(232,185,77,.18); color: var(--amarelo);
+    font-size:.72rem; letter-spacing:1px; text-transform:uppercase; padding:5px 12px; border-radius:999px;
+    border:1px solid rgba(232,185,77,.4);
+  }
+
+  .card{
+    background: var(--papel); border-radius: var(--radius);
+    box-shadow: 0 10px 24px var(--sombra), 0 1px 0 rgba(255,255,255,.4) inset;
+    padding:22px; margin-bottom:22px; border:1px solid var(--linha); position:relative;
+  }
+  .card::before{
+    content:""; position:absolute; top:0; left:24px; right:24px; height:10px;
+    background: repeating-linear-gradient(90deg, transparent 0 18px, rgba(192,83,62,.18) 18px 20px);
+  }
+
+  h2.section-title{ font-size:1.1rem; margin:0 0 14px; color: var(--tinta); display:flex; align-items:center; gap:10px; }
+  h2.section-title .tag{
+    background: var(--quadro); color: var(--giz); font-size:.7rem; padding:3px 9px;
+    border-radius:5px; letter-spacing:1px; text-transform:uppercase;
+  }
+
+  .stat-strip{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
+  .stat-box{ flex:1; min-width:120px; background: var(--papel-2); border-radius:8px; padding:14px; text-align:center; border:1px solid var(--linha); }
+  .stat-box .num{ font-size:1.7rem; font-weight:800; color: var(--quadro); display:block;}
+  .stat-box .lbl{ font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; color:#8a7e5e;}
+
+  /* Resource status cards */
+  .resource-status-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .res-card{
+    background:#fffdf7; border:1.5px solid var(--linha); border-radius:9px; padding:14px;
+  }
+  .res-card.is-blocked{ border-color: var(--vermelho); background:#fdf3f1; }
+  .res-card .res-head{ display:flex; align-items:center; gap:8px; font-weight:700; margin-bottom:8px; }
+  .res-card .res-head .ico{ font-size:1.2rem; }
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700;
+    padding:3px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px;
+  }
+  .status-pill.ok{ background:#e3efe0; color: var(--verde-ok); }
+  .status-pill.blocked{ background:#f6dcd5; color: var(--vermelho); }
+  .res-card .reason{ font-size:.8rem; color:#7a2c1c; margin-bottom:10px; min-height: 1em; }
+  .res-card input[type=text]{
+    width:100%; padding:7px 9px; border:1.5px solid var(--linha); border-radius:6px;
+    background:#fff; font-size:.82rem; margin-bottom:8px; font-family:inherit;
+  }
+  .res-card .btn-row{ display:flex; gap:8px; }
+  .btn{ border:none; border-radius:7px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:.8rem; flex:1; }
+  .btn.warn{ background: var(--vermelho); color:#fff; }
+  .btn.warn:hover{ opacity:.88; }
+  .btn.ok{ background: var(--verde-ok); color:#fff; }
+  .btn.ok:hover{ opacity:.88; }
+
+  .resource-pills{ display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;}
+  .pill{
+    padding:9px 16px; border-radius:999px; border:1.5px solid var(--linha);
+    background:#fffdf7; cursor:pointer; font-size:.9rem; font-weight:600; display:flex; align-items:center; gap:6px;
+  }
+  .pill.active{ background: var(--quadro); color: var(--giz); border-color: var(--quadro); }
+  .pill .ico{ font-size:1.05rem; }
+
+  .turno-label{
+    font-weight:800; font-size:.75rem; text-transform:uppercase; letter-spacing:1.5px;
+    color:#8a7e5e; margin:18px 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .turno-label::after{ content:""; flex:1; height:1px; background: var(--linha); }
+
+  table.grid{ width:100%; border-collapse: collapse; background:#fffdf7; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+  table.grid th, table.grid td{ border:1px solid var(--linha); padding:0; text-align:center; }
+  table.grid th{ background: var(--quadro-2); color: var(--giz); font-size:.78rem; padding:9px 4px; font-weight:700; letter-spacing:.4px;}
+  table.grid th.period-col{ background: var(--quadro); width:64px; }
+  .slot{ min-height:52px; padding:7px 6px; font-size:.78rem; line-height:1.25; position:relative; }
+  .slot.free{ background:#fbf8ee; color:#bdb595; }
+  .slot.taken{ background:#e9f1e6; color:#2c4a2f; font-weight:700; cursor:pointer; }
+  .slot.taken:hover{ background:#dcebd8; }
+  .slot.taken .who{ display:block; font-weight:700; }
+  .slot.taken .hint{ display:block; font-size:.62rem; font-weight:400; opacity:.7; margin-top:2px;}
+  .slot.blocked{ background: repeating-linear-gradient(45deg, #f3d9d4, #f3d9d4 6px, #ecc6bf 6px 12px); color:#8a2f1e; font-weight:700; }
+
+  .legend{ display:flex; gap:18px; flex-wrap:wrap; margin:14px 0 4px; font-size:.8rem; color:#6b6450;}
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:14px; height:14px; border-radius:3px; display:inline-block; border:1px solid var(--linha); }
+
+  .summary-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px dashed var(--linha); font-size:.88rem; }
+  .summary-row:last-child{ border-bottom:none; }
+  .summary-row .meta{ color:#8a7e5e; font-size:.78rem; }
+  .del-btn{ background: var(--vermelho); color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:.75rem; cursor:pointer; font-weight:700; }
+  .del-btn:hover{ opacity:.85; }
+  .empty-state{ text-align:center; padding:30px 10px; color:#8a7e5e; font-style:italic; }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform: translateX(-50%);
+    background: var(--quadro); color: var(--giz); padding:12px 22px; border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.3); font-size:.9rem; z-index:999; opacity:0;
+    transition: opacity .25s, transform .25s; pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(-6px); }
+  .toast.err{ background: var(--vermelho); }
+
+  @media (max-width:720px){
+    .slot{ font-size:.68rem; padding:5px 3px; min-height:42px;}
+    table.grid th{ font-size:.65rem; padding:6px 2px;}
+    .chalk-title{ font-size:1.9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="board">
+    <p class="chalk-title">Painel de Gestão</p>
+    <p class="chalk-sub">Controle de reservas e status técnico</p>
+    <div class="chalk-rule"></div>
+    <div class="badge-area">🗝️ Área do Responsável pela Informática</div>
+  </header>
+
+  <div class="card">
+    <h2 class="section-title">Visão geral</h2>
+    <div class="stat-strip" id="admin-stats"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">Status técnico dos recursos <span class="tag">avisos aos professores</span></h2>
+    <p style="font-size:.85rem;color:#6b6450;margin-top:-6px;margin-bottom:14px;">
+      Marque um recurso como indisponível (sem internet, manutenção, equipamento com defeito etc.) para
+      bloquear novas reservas e avisar os professores automaticamente. Eles verão o motivo na tela deles.
+    </p>
+    <div class="resource-status-grid" id="status-cards"></div>
+  </div>
+
+  <div class="card" id="admin-grid-card">
+    <h2 class="section-title" id="admin-grid-title">Grade de reservas</h2>
+    <div class="resource-pills" id="admin-resource-pills"></div>
+    <div class="legend" style="margin-top:14px;">
+      <span><span class="swatch" style="background:#fbf8ee"></span> Livre</span>
+      <span><span class="swatch" style="background:#e9f1e6"></span> Reservado (clique p/ cancelar)</span>
+      <span><span class="swatch" style="background:#f3d9d4"></span> Bloqueado por problema técnico</span>
+    </div>
+    <div id="admin-grid-container"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">Todas as reservas (todos os recursos)</h2>
+    <div id="admin-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCi62yDjL4ayE3JoCP-m8dDpyEb1jIiZis",
+  authDomain: "agendamento-escolar-86843.firebaseapp.com",
+  projectId: "agendamento-escolar-86843",
+  storageBucket: "agendamento-escolar-86843.firebasestorage.app",
+  messagingSenderId: "339474137748",
+  appId: "1:339474137748:web:94412cb05e597f7e9cea81"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const reservasCol = collection(db, "reservas");
+const statusCol = collection(db, "status");
+
+const RESOURCES = [
+  {id:'informatica', label:'Informática', icon:'💻'},
+  {id:'tablets', label:'Tablets', icon:'📱'},
+  {id:'tela', label:'Tela Interativa', icon:'🖥️'},
+  {id:'biblioteca', label:'Biblioteca', icon:'📚'},
+  {id:'video', label:'Sala de Vídeo', icon:'🎬'},
+];
+const DAYS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+const TURNOS = ['Manhã','Tarde'];
+const PERIODOS = [1,2,3,4,5];
+
+let adminSelectedResource = RESOURCES[0].id;
+let reservations = {};
+let statuses = {};
+
+function slotKey(resource, day, turno, periodo){ return `${resource}__${day}__${turno}__${periodo}`; }
+function statusKey(resource){ return resource; }
+
+async function loadAll(){
+  try{
+    const snap = await getDocs(reservasCol);
+    reservations = {};
+    snap.forEach(d=>{ reservations[d.id] = d.data(); });
+  }catch(e){ console.error(e); }
+
+  try{
+    const snap = await getDocs(statusCol);
+    statuses = {};
+    snap.forEach(d=>{ statuses[d.id] = d.data(); });
+  }catch(e){ console.error(e); }
+}
+
+function showToast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(()=>{ t.className = 'toast'; }, 2800);
+}
+
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function setResourceBlocked(resourceId, blocked, reason){
+  const key = statusKey(resourceId);
+  try{
+    if(blocked){
+      const value = {blocked:true, reason: reason || 'Problema técnico', ts: Date.now()};
+      await setDoc(doc(statusCol, key), value);
+      statuses[resourceId] = value;
+      showToast(`${RESOURCES.find(r=>r.id===resourceId).label} marcado como indisponível.`);
+    } else {
+      await deleteDoc(doc(statusCol, key));
+      delete statuses[resourceId];
+      showToast(`${RESOURCES.find(r=>r.id===resourceId).label} liberado novamente.`);
+    }
+    renderAll();
+  }catch(e){
+    console.error(e);
+    showToast('Erro ao atualizar status.', true);
+  }
+}
+
+async function adminCancelReservation(key){
+  if(!confirm('Cancelar esta reserva?')) return;
+  try{
+    await deleteDoc(doc(reservasCol, key));
+    delete reservations[key];
+    showToast('Reserva removida.');
+    renderAll();
+  }catch(e){
+    console.error(e);
+    showToast('Erro ao remover.', true);
+  }
+}
+
+function renderStats(){
+  const statBox = document.getElementById('admin-stats');
+  const totalSlots = RESOURCES.length * DAYS.length * TURNOS.length * PERIODOS.length;
+  const totalReserved = Object.keys(reservations).length;
+  const totalBlocked = Object.values(statuses).filter(s=>s.blocked).length;
+  statBox.innerHTML = `
+    <div class="stat-box"><span class="num">${totalReserved}</span><span class="lbl">Reservas ativas</span></div>
+    <div class="stat-box"><span class="num">${totalSlots - totalReserved}</span><span class="lbl">Vagas livres</span></div>
+    <div class="stat-box"><span class="num">${totalBlocked}</span><span class="lbl">Recursos c/ problema</span></div>
+  `;
+}
+
+function renderStatusCards(){
+  const c = document.getElementById('status-cards');
+  c.innerHTML = '';
+  RESOURCES.forEach(r=>{
+    const st = statuses[r.id];
+    const isBlocked = st && st.blocked;
+    const card = document.createElement('div');
+    card.className = 'res-card' + (isBlocked ? ' is-blocked' : '');
+    card.innerHTML = `
+      <div class="res-head"><span class="ico">${r.icon}</span> ${r.label}</div>
+      <span class="status-pill ${isBlocked ? 'blocked' : 'ok'}">${isBlocked ? '⚠️ Congestionado / com problema' : '✅ Funcionando'}</span>
+      <div class="reason">${isBlocked ? escapeHtml(st.reason) : ''}</div>
+      ${isBlocked
+        ? `<div class="btn-row"><button class="btn ok" data-action="liberar" data-id="${r.id}">Liberar recurso</button></div>`
+        : `<input type="text" placeholder="Motivo (ex: sem internet, manutenção...)" id="reason-${r.id}">
+           <div class="btn-row"><button class="btn warn" data-action="bloquear" data-id="${r.id}">Marcar com problema</button></div>`
+      }
+    `;
+    c.appendChild(card);
+  });
+
+  c.querySelectorAll('button[data-action="bloquear"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.id;
+      const reasonInput = document.getElementById(`reason-${id}`);
+      const reason = reasonInput.value.trim();
+      setResourceBlocked(id, true, reason);
+    };
+  });
+  c.querySelectorAll('button[data-action="liberar"]').forEach(btn=>{
+    btn.onclick = ()=> setResourceBlocked(btn.dataset.id, false);
+  });
+}
+
+function renderResourcePills(){
+  const c = document.getElementById('admin-resource-pills');
+  c.innerHTML = '';
+  RESOURCES.forEach(r=>{
+    const p = document.createElement('div');
+    p.className = 'pill' + (r.id===adminSelectedResource ? ' active' : '');
+    p.innerHTML = `<span class="ico">${r.icon}</span> ${r.label}`;
+    p.onclick = ()=>{ adminSelectedResource = r.id; renderAll(); };
+    c.appendChild(p);
+  });
+}
+
+function buildGrid(container, resourceId){
+  container.innerHTML = '';
+  const st = statuses[resourceId];
+  const isBlocked = st && st.blocked;
+
+  TURNOS.forEach(turno=>{
+    const lbl = document.createElement('div');
+    lbl.className = 'turno-label';
+    lbl.textContent = turno;
+    container.appendChild(lbl);
+
+    const table = document.createElement('table');
+    table.className = 'grid';
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    trh.innerHTML = '<th class="period-col">Aula</th>' + DAYS.map(d=>`<th>${d}</th>`).join('');
+    thead.appendChild(trh);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    PERIODOS.forEach(periodo=>{
+      const tr = document.createElement('tr');
+      const th = document.createElement('th');
+      th.className = 'period-col';
+      th.textContent = periodo + 'º';
+      tr.appendChild(th);
+
+      DAYS.forEach(day=>{
+        const td = document.createElement('td');
+        const key = slotKey(resourceId, day, turno, periodo);
+        const res = reservations[key];
+        const div = document.createElement('div');
+
+        if(isBlocked && !res){
+          div.className = 'slot blocked';
+          div.innerHTML = '🚫 bloqueado';
+        } else if(res){
+          div.className = 'slot taken';
+          div.innerHTML = `<span class="who">${escapeHtml(res.professor)}</span><span class="hint">clique p/ cancelar</span>`;
+          div.onclick = ()=> adminCancelReservation(key);
+        } else {
+          div.className = 'slot free';
+          div.innerHTML = '&nbsp;';
+        }
+        td.appendChild(div);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+  });
+}
+
+function renderList(){
+  const listEl = document.getElementById('admin-list');
+  const entries = Object.entries(reservations).sort((a,b)=> (b[1].ts||0) - (a[1].ts||0));
+  if(entries.length === 0){
+    listEl.innerHTML = '<div class="empty-state">Nenhuma reserva registrada ainda.</div>';
+    return;
+  }
+  listEl.innerHTML = entries.map(([key, val])=>{
+    const resourceLabel = RESOURCES.find(r=>r.id===val.resource)?.label || val.resource;
+    return `<div class="summary-row">
+      <div>
+        <strong>${escapeHtml(val.professor)}</strong> — ${resourceLabel}
+        <div class="meta">${val.day}, ${val.turno}, ${val.periodo}º horário</div>
+      </div>
+      <button class="del-btn" data-key="${encodeURIComponent(key)}">Cancelar</button>
+    </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.onclick = ()=> adminCancelReservation(decodeURIComponent(btn.dataset.key));
+  });
+}
+
+function renderAll(){
+  renderStats();
+  renderStatusCards();
+  renderResourcePills();
+  document.getElementById('admin-grid-title').innerHTML =
+    `Grade de reservas — ${RESOURCES.find(r=>r.id===adminSelectedResource).label}`;
+  buildGrid(document.getElementById('admin-grid-container'), adminSelectedResource);
+  renderList();
+}
+
+async function init(){
+  await loadAll();
+  renderAll();
+  onSnapshot(reservasCol, (snap)=>{
+    reservations = {};
+    snap.forEach(d=>{ reservations[d.id] = d.data(); });
+    renderAll();
+  });
+  onSnapshot(statusCol, (snap)=>{
+    statuses = {};
+    snap.forEach(d=>{ statuses[d.id] = d.data(); });
+    renderAll();
+  });
+}
+init();
+</script>
+</body>
+</html>
